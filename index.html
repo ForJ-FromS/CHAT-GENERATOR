@@ -1,0 +1,1405 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OOC Chat Maker</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: #f7f4ef;
+        --ink: #23242a;
+        --soft-ink: #545861;
+        --muted: #7a7f8b;
+        --line: #ddd7ce;
+        --panel: #fffdf9;
+        --panel-2: #f3efe7;
+        --accent: #e06b75;
+        --accent-ink: #ffffff;
+        --chat-bg: #fff8ee;
+        --incoming: #ffffff;
+        --incoming-ink: #24262d;
+        --outgoing: #e06b75;
+        --outgoing-ink: #ffffff;
+        --avatar: #78a6a3;
+        --shadow: 0 24px 70px rgba(70, 59, 49, 0.16);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        background: var(--page);
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 8% 8%, rgba(224, 107, 117, 0.16), transparent 28%),
+          radial-gradient(circle at 92% 14%, rgba(120, 166, 163, 0.18), transparent 30%),
+          linear-gradient(135deg, #fffaf1 0%, #f3f4ee 48%, #f8eff2 100%);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        border: 0;
+        cursor: pointer;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: minmax(360px, 460px) minmax(360px, 1fr);
+        align-items: start;
+        gap: 24px;
+        width: min(1280px, 100%);
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .controls,
+      .preview-panel {
+        border: 1px solid rgba(121, 107, 91, 0.2);
+        border-radius: 18px;
+        background: rgba(255, 253, 249, 0.88);
+        box-shadow: var(--shadow);
+      }
+
+      .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px;
+      }
+
+      .brand,
+      .label-row,
+      .stats,
+      .button-row,
+      .chat-head,
+      .save-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        background: #ffe3df;
+        color: #9c3f49;
+        font-weight: 900;
+      }
+
+      .brand-text {
+        min-width: 0;
+      }
+
+      .eyebrow {
+        margin: 0 0 4px;
+        color: #9c6861;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: 0;
+      }
+
+      .hint {
+        margin: 2px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .helper {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      label {
+        color: #454951;
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #ffffff;
+        color: var(--ink);
+        outline: none;
+      }
+
+      input,
+      select {
+        height: 42px;
+        padding: 0 12px;
+      }
+
+      input[type="color"] {
+        height: 42px;
+        padding: 4px;
+      }
+
+      input[type="file"] {
+        min-height: 42px;
+        padding: 9px 10px;
+        font-size: 12px;
+      }
+
+      textarea {
+        min-height: 190px;
+        resize: vertical;
+        padding: 14px;
+        line-height: 1.55;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+      }
+
+      .segmented {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        padding: 5px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #f1ebe2;
+      }
+
+      .segmented label {
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-height: 34px;
+        border-radius: 10px;
+        color: #68646b;
+        cursor: pointer;
+      }
+
+      .segmented input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+      }
+
+      .segmented input:checked + span {
+        color: var(--ink);
+        background: #ffffff;
+        box-shadow: 0 2px 8px rgba(65, 50, 38, 0.1);
+      }
+
+      .segmented span {
+        display: grid;
+        place-items: center;
+        width: 100%;
+        height: 100%;
+        border-radius: 10px;
+      }
+
+      .button {
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 12px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        font-weight: 800;
+      }
+
+      .button.secondary {
+        background: #ece7dc;
+        color: #4f453c;
+      }
+
+      .button.light {
+        background: #ffffff;
+        color: #4f453c;
+        border: 1px solid var(--line);
+      }
+
+      .photo-tools {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: end;
+        gap: 10px;
+      }
+
+      .stats {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .preview-panel {
+        display: grid;
+        gap: 14px;
+        padding: 18px;
+      }
+
+      .save-row {
+        align-items: end;
+      }
+
+      .preview-title strong {
+        display: block;
+        font-size: 17px;
+      }
+
+      .preview-title span {
+        display: block;
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .chat-card {
+        width: min(560px, 100%);
+        margin: 0 auto;
+        overflow: visible;
+        border-radius: 28px;
+        background: var(--chat-bg);
+        box-shadow: 0 20px 44px rgba(50, 43, 36, 0.15);
+      }
+
+      .chat-head {
+        padding: 18px 20px 14px;
+        background: rgba(255, 255, 255, 0.68);
+        border-bottom: 1px solid rgba(80, 70, 60, 0.12);
+        border-radius: 28px 28px 0 0;
+      }
+
+      .chat-head-left {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        gap: 10px;
+      }
+
+      .mini-avatar {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        background: var(--avatar);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 900;
+        overflow: hidden;
+      }
+
+      .chat-title {
+        min-width: 0;
+      }
+
+      .chat-title strong,
+      .chat-title small {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .chat-title strong {
+        font-size: 15px;
+      }
+
+      .chat-title small {
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .chat-title small:empty {
+        display: none;
+      }
+
+      .chat-action {
+        display: none;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .thread {
+        display: flex;
+        flex-direction: column;
+        gap: 11px;
+        padding: 18px 16px 22px;
+      }
+
+      .day {
+        display: none;
+        align-self: center;
+        padding: 5px 11px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.58);
+        color: #747984;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .message {
+        display: grid;
+        grid-template-columns: 34px minmax(0, max-content);
+        align-items: end;
+        gap: 8px;
+        max-width: 88%;
+      }
+
+      .message.mine {
+        align-self: flex-end;
+        grid-template-columns: minmax(0, max-content);
+      }
+
+      .avatar {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: var(--avatar);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 900;
+        overflow: hidden;
+      }
+
+      .avatar img,
+      .mini-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .bubble-wrap {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+      }
+
+      .name {
+        color: #4f5560;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .bubble {
+        width: fit-content;
+        max-width: 100%;
+        padding: 10px 13px;
+        border-radius: 18px;
+        background: var(--incoming);
+        color: var(--incoming-ink);
+        line-height: 1.48;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+      }
+
+      .mine .bubble {
+        justify-self: end;
+        background: var(--outgoing);
+        color: var(--outgoing-ink);
+      }
+
+      .meta {
+        color: #737985;
+        font-size: 10px;
+      }
+
+      .mine .meta {
+        justify-self: end;
+      }
+
+      .composer {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 14px 14px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #9aa0aa;
+        font-size: 13px;
+      }
+
+      .composer-button {
+        display: grid;
+        place-items: center;
+        width: 26px;
+        height: 26px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--accent) 12%, transparent);
+        color: var(--accent);
+        font-weight: 900;
+      }
+
+      .composer-input {
+        flex: 1;
+        min-width: 0;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #ffffff;
+      }
+
+      .theme-instagram .composer {
+        background: #ffffff;
+        border: 1px solid #eceef2;
+      }
+
+      .theme-kakao .composer {
+        margin: 0;
+        padding: 10px 14px 14px;
+        border-radius: 0 0 28px 28px;
+        background: rgba(255, 255, 255, 0.88);
+      }
+
+      .theme-kakao .composer-button {
+        background: transparent;
+      }
+
+      .empty {
+        display: grid;
+        place-items: center;
+        min-height: 180px;
+        color: #727985;
+        text-align: center;
+      }
+
+      .empty strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .compact .thread {
+        gap: 6px;
+      }
+
+      .compact .bubble {
+        padding: 8px 11px;
+        line-height: 1.38;
+      }
+
+      .theme-rose {
+        --accent: #e06b75;
+        --accent-ink: #ffffff;
+        --chat-bg: #fff6ef;
+        --incoming: #ffffff;
+        --outgoing: #e06b75;
+        --outgoing-ink: #ffffff;
+        --avatar: #78a6a3;
+      }
+
+      .theme-mint {
+        --accent: #3f8f84;
+        --accent-ink: #ffffff;
+        --chat-bg: #edf7f2;
+        --incoming: #ffffff;
+        --outgoing: #3f8f84;
+        --outgoing-ink: #ffffff;
+        --avatar: #e49a74;
+      }
+
+      .theme-lilac {
+        --accent: #8b76d1;
+        --accent-ink: #ffffff;
+        --chat-bg: #f7f2ff;
+        --incoming: #ffffff;
+        --outgoing: #8b76d1;
+        --outgoing-ink: #ffffff;
+        --avatar: #d486a7;
+      }
+
+      .theme-mono {
+        --accent: #2f333a;
+        --accent-ink: #ffffff;
+        --chat-bg: #f4f4f2;
+        --incoming: #ffffff;
+        --outgoing: #2f333a;
+        --outgoing-ink: #ffffff;
+        --avatar: #9a8f82;
+      }
+
+      .theme-imessage {
+        --accent: #1677f2;
+        --accent-ink: #ffffff;
+        --chat-bg: #f5f6f8;
+        --incoming: #e9e9eb;
+        --outgoing: #1677f2;
+        --outgoing-ink: #ffffff;
+        --avatar: #9da5b4;
+      }
+
+      .theme-imessage .chat-head {
+        justify-content: center;
+        padding: 22px 20px 16px;
+      }
+
+      .theme-imessage .chat-head-left {
+        flex-direction: column;
+        gap: 7px;
+        margin: 0 auto;
+        text-align: center;
+      }
+
+      .theme-imessage .mini-avatar {
+        width: 54px;
+        height: 54px;
+        font-size: 15px;
+      }
+
+      .theme-imessage .chat-title strong,
+      .theme-imessage .chat-title small {
+        text-align: center;
+      }
+
+      .theme-imessage .chat-action,
+      .theme-imessage .message:not(.mine) .avatar,
+      .theme-imessage .message:not(.mine) .name {
+        display: none;
+      }
+
+      .theme-imessage .message:not(.mine) {
+        grid-template-columns: minmax(0, max-content);
+      }
+
+      .theme-kakao {
+        --accent: #3a2d20;
+        --accent-ink: #ffffff;
+        --chat-bg: #b9d0df;
+        --incoming: #ffffff;
+        --outgoing: #fee500;
+        --outgoing-ink: #3a2d20;
+        --avatar: #7d96a5;
+      }
+
+      .theme-instagram {
+        --accent: #c13584;
+        --accent-ink: #ffffff;
+        --chat-bg: #ffffff;
+        --incoming: #f1f2f5;
+        --outgoing: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+        --outgoing-ink: #ffffff;
+        --avatar: #c13584;
+      }
+
+      .theme-instagram .bubble {
+        box-shadow: none;
+      }
+
+      .theme-instagram .chat-card {
+        border: 1px solid #eceef2;
+        box-shadow: 0 16px 42px rgba(25, 28, 35, 0.08);
+      }
+
+      .theme-instagram .chat-head {
+        background: #ffffff;
+      }
+
+      .theme-instagram .chat-action,
+      .theme-instagram .day {
+        display: none;
+      }
+
+      .theme-instagram .thread {
+        gap: 7px;
+      }
+
+      .theme-instagram .name {
+        display: none;
+      }
+
+      .theme-instagram .bubble {
+        border-radius: 22px;
+        padding: 9px 13px;
+      }
+
+      .theme-instagram .message.continued .avatar {
+        visibility: hidden;
+      }
+
+      .theme-instagram .message.continued .meta {
+        display: none;
+      }
+
+      @media (max-width: 920px) {
+        .shell {
+          grid-template-columns: 1fr;
+          padding: 14px;
+        }
+
+        .save-row {
+          align-items: stretch;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="controls" aria-label="채팅 제작 도구">
+        <div class="brand">
+          <div class="brand" style="justify-content: flex-start">
+            <div class="brand-mark">O</div>
+            <div class="brand-text">
+              <p class="eyebrow">OOC Chat Maker</p>
+              <h1>채팅 메이커</h1>
+              <p class="hint">붙여넣고 바로 이미지로 저장</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="theme">테마</label>
+            <select id="theme">
+              <option value="rose">문자 · 복숭아</option>
+              <option value="mint">문자 · 민트</option>
+              <option value="lilac">문자 · 라일락</option>
+              <option value="mono">문자 · 모노</option>
+              <option value="imessage">아이메시지</option>
+              <option value="kakao">카카오톡</option>
+              <option value="instagram">인스타 DM</option>
+              <option value="custom">직접 색 지정</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="me">수신인</label>
+            <input id="me" placeholder="비우면 자동 판단" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="replaceFrom">발신인 원본 이름</label>
+            <input id="replaceFrom" placeholder="예: 블루" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="replaceTo">희망 표시 이름</label>
+            <input id="replaceTo" placeholder="예: 재안" autocomplete="off" />
+          </div>
+        </div>
+        <p class="helper">발신인 원본 이름을 희망 표시 이름으로 바꿔 보여줘요. 붙여넣은 원문은 수정하지 않아요.</p>
+
+        <div class="two-col color-fields" id="colorFields">
+          <div class="field">
+            <label for="bgColor">배경</label>
+            <input id="bgColor" type="color" value="#fff6ef" />
+          </div>
+          <div class="field">
+            <label for="mineColor">내 말풍선</label>
+            <input id="mineColor" type="color" value="#e06b75" />
+          </div>
+          <div class="field">
+            <label for="otherColor">상대 말풍선</label>
+            <input id="otherColor" type="color" value="#ffffff" />
+          </div>
+          <div class="field">
+            <label for="avatarColor">프로필</label>
+            <input id="avatarColor" type="color" value="#78a6a3" />
+          </div>
+        </div>
+
+        <div class="photo-tools">
+          <div class="field">
+            <label for="profileImage">상대 프로필 사진</label>
+            <input id="profileImage" type="file" accept="image/*" />
+          </div>
+          <button class="button light" id="removeProfile" type="button">삭제</button>
+        </div>
+
+        <div class="segmented" role="group" aria-label="보기 설정">
+          <label>
+            <input id="showMeta" type="checkbox" checked />
+            <span>시간</span>
+          </label>
+          <label>
+            <input id="showNames" type="checkbox" checked />
+            <span>이름</span>
+          </label>
+          <label>
+            <input id="compact" type="checkbox" />
+            <span>촘촘히</span>
+          </label>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label for="source">대화 내용 붙여넣기</label>
+          </div>
+          <textarea
+            id="source"
+            spellcheck="false"
+            placeholder="<보낸사람 / 발신시간 / 받는사람>&#10;[메시지 내용]&#10;&#10;<받는사람 / 발신시간 / 보낸사람>&#10;[메시지 내용]"
+          ></textarea>
+          <p class="helper">AI가 출력한 채팅 내용만 여기에 붙여넣으면 오른쪽 미리보기에 바로 반영돼요.</p>
+        </div>
+
+        <div class="button-row">
+          <button class="button secondary" id="copyPrompt" type="button">출력 지침 복사</button>
+          <button class="button secondary" id="clearButton" type="button">비우기</button>
+        </div>
+
+        <div class="stats">
+          <span id="messageCount">0개 메시지</span>
+          <span id="parseStatus">대기 중</span>
+        </div>
+      </section>
+
+      <section class="preview-panel" aria-label="이미지 미리보기">
+        <div class="save-row">
+          <div class="preview-title">
+            <strong>저장용 미리보기</strong>
+            <span>메시지가 길어지면 카드 높이도 같이 늘어나요.</span>
+          </div>
+          <button class="button" id="saveImage" type="button">PNG 저장</button>
+        </div>
+
+        <div class="chat-card theme-rose" id="capture">
+          <div class="chat-head">
+            <div class="chat-head-left">
+              <div class="mini-avatar" id="headerAvatar">채팅</div>
+              <div class="chat-title">
+                <strong id="chatTitle">채팅</strong>
+                <small id="chatSubtitle">붙여넣으면 바로 반영돼요</small>
+              </div>
+            </div>
+            <div class="chat-action">오늘</div>
+          </div>
+          <div class="thread" id="thread" aria-live="polite"></div>
+          <div class="composer" id="composer"></div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const source = document.querySelector("#source");
+      const theme = document.querySelector("#theme");
+      const meInput = document.querySelector("#me");
+      const replaceFromInput = document.querySelector("#replaceFrom");
+      const replaceToInput = document.querySelector("#replaceTo");
+      const showMeta = document.querySelector("#showMeta");
+      const showNames = document.querySelector("#showNames");
+      const compact = document.querySelector("#compact");
+      const capture = document.querySelector("#capture");
+      const thread = document.querySelector("#thread");
+      const chatTitle = document.querySelector("#chatTitle");
+      const chatSubtitle = document.querySelector("#chatSubtitle");
+      const headerAvatar = document.querySelector("#headerAvatar");
+      const composer = document.querySelector("#composer");
+      const messageCount = document.querySelector("#messageCount");
+      const parseStatus = document.querySelector("#parseStatus");
+      const bgColor = document.querySelector("#bgColor");
+      const mineColor = document.querySelector("#mineColor");
+      const otherColor = document.querySelector("#otherColor");
+      const avatarColor = document.querySelector("#avatarColor");
+      const profileImage = document.querySelector("#profileImage");
+      const removeProfile = document.querySelector("#removeProfile");
+      let profileImageData = "";
+
+      const themeNames = {
+        rose: "문자 · 복숭아",
+        mint: "문자 · 민트",
+        lilac: "문자 · 라일락",
+        mono: "문자 · 모노",
+        imessage: "아이메시지",
+        kakao: "카카오톡",
+        instagram: "인스타 DM",
+        custom: "직접 색 지정",
+      };
+
+      const promptText = `OOC: 롤플레잉 일시 중단.
+
+NPC와 PC의 일상적인 채팅 내용을 출력할 것.
+설명, 해설, 상황 묘사, 감정 묘사, 괄호 설명, 번호 매기기, 목록 제목은 출력하지 말 것.
+오직 아래 출력 형식만 반복해서 사용할 것.
+
+<보낸사람 / 발신시간 / 받는사람>
+[메시지 내용]
+
+작성 규칙:
+- 발신시간은 예: 오후 11:08, 오전 1:22, 오후 9:10 형식으로 쓴다.
+- 서로 다른 날짜의 대화가 섞일 경우 발신시간에 날짜를 포함한다.
+- 한 메시지는 반드시 <보낸사람 / 발신시간 / 받는사람> 줄과 [메시지 내용] 줄로 구성한다.
+- 메시지 내용이 길면 [ ] 안에서만 줄바꿈한다.
+- 날짜가 바뀐 메시지 사이에는 구분선을 하나를 둔다.
+- 메시지 내용 안에는 대화문만 쓴다.
+- 맞춤법과 띄어쓰기는 NPC/PC의 캐릭터성에 따라 일부러 틀릴 수 있으며, 캐릭터성에 따라 이모티콘이나 이모지 사용도 가능하다.
+- 일상 내용, 임무 내용, 잡담, 확인 DM, 짧은 반응 등을 섞어 가독성 있게 구성한다.
+- 총 60개 이상의 메시지를 작성한다.
+- 출력 형식 밖의 문장은 절대 쓰지 않는다.
+- 채팅 내용은 PC와 NPC의 관계, 캐릭터 설정과 말투를 적극적으로 반영한다.`;
+
+      function parseMessages(text) {
+        const messages = [];
+        const pattern = /<\s*([^/\n<>]+?)\s*\/\s*([^/\n<>]+?)\s*\/\s*([^>\n]+?)\s*>\s*\n?\s*\[([\s\S]*?)\]/g;
+        let match;
+
+        while ((match = pattern.exec(text)) !== null) {
+          messages.push({
+            sender: match[1].trim(),
+            time: match[2].trim(),
+            receiver: match[3].trim(),
+            body: match[4].trim(),
+          });
+        }
+
+        return messages;
+      }
+
+      function initials(name) {
+        return [...name.trim()].slice(0, 2).join("") || "?";
+      }
+
+      function displayName(name) {
+        const from = replaceFromInput.value.trim();
+        const to = replaceToInput.value.trim();
+
+        if (from && to && name === from) {
+          return to;
+        }
+
+        return name;
+      }
+
+      function setAvatar(element, fallbackText) {
+        element.innerHTML = "";
+
+        if (profileImageData) {
+          const image = document.createElement("img");
+          image.src = profileImageData;
+          image.alt = "";
+          element.append(image);
+          return;
+        }
+
+        element.textContent = initials(fallbackText);
+      }
+
+      function getOtherName(messages, me) {
+        const other = messages.find((message) => message.sender !== me)?.sender
+          || messages.find((message) => message.receiver !== me)?.receiver
+          || "채팅";
+        return displayName(other);
+      }
+
+      function getMe(messages) {
+        const manual = meInput.value.trim();
+        if (manual) {
+          return manual;
+        }
+
+        const first = messages[0];
+        if (first && first.receiver && first.receiver !== first.sender) {
+          return first.receiver;
+        }
+
+        return "나";
+      }
+
+      function setCustomColors() {
+        capture.style.setProperty("--chat-bg", bgColor.value);
+        capture.style.setProperty("--outgoing", mineColor.value);
+        capture.style.setProperty("--incoming", otherColor.value);
+        capture.style.setProperty("--avatar", avatarColor.value);
+        capture.style.setProperty("--accent", mineColor.value);
+        capture.style.setProperty("--outgoing-ink", readableTextColor(mineColor.value));
+        capture.style.setProperty("--incoming-ink", readableTextColor(otherColor.value));
+      }
+
+      function readableTextColor(hex) {
+        const clean = hex.replace("#", "");
+        const r = parseInt(clean.slice(0, 2), 16);
+        const g = parseInt(clean.slice(2, 4), 16);
+        const b = parseInt(clean.slice(4, 6), 16);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        return brightness > 150 ? "#24262d" : "#ffffff";
+      }
+
+      function cleanTime(time) {
+        return time
+          .trim()
+          .replace(/\d{4}\s*[.\-/]\s*\d{1,2}\s*[.\-/]\s*\d{1,2}\s*/g, "")
+          .replace(/\d{4}\s*년\s*\d{1,2}\s*월\s*\d{1,2}\s*일?\s*/g, "")
+          .replace(/\d{1,2}\s*월\s*\d{1,2}\s*일?\s*/g, "")
+          .trim();
+      }
+
+      function renderComposer(selectedTheme) {
+        const layouts = {
+          instagram: ["⌾", "메시지", "♡"],
+          kakao: ["+", "메시지 입력", "#"],
+          imessage: ["+", "iMessage", "◉"],
+          default: ["+", "메시지", "↗"],
+        };
+        const [left, text, right] = layouts[selectedTheme] || layouts.default;
+        composer.innerHTML = `
+          <span class="composer-button">${left}</span>
+          <span class="composer-input">${text}</span>
+          <span class="composer-button">${right}</span>
+        `;
+      }
+
+      function render() {
+        const messages = parseMessages(source.value);
+        const me = getMe(messages);
+        const selectedTheme = theme.value;
+        const title = messages.length ? getOtherName(messages, me) : "채팅";
+
+        capture.className = `chat-card theme-${selectedTheme}${compact.checked ? " compact" : ""}`;
+        capture.removeAttribute("style");
+
+        if (selectedTheme === "custom") {
+          setCustomColors();
+        }
+
+        chatTitle.textContent = title;
+        chatSubtitle.textContent = messages.length ? "" : "붙여넣으면 바로 반영돼요";
+        setAvatar(headerAvatar, title);
+        renderComposer(selectedTheme);
+        messageCount.textContent = `${messages.length}개 메시지`;
+        parseStatus.textContent = source.value.trim() && messages.length === 0 ? "형식 확인 필요" : "준비됨";
+        thread.innerHTML = "";
+
+        if (!messages.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.innerHTML = "<div><strong>대기 중</strong><span>왼쪽에 대화 내용을 붙여넣어 주세요.</span></div>";
+          thread.append(empty);
+          return;
+        }
+
+        messages.forEach((message, index) => {
+          const isMine = message.sender === me;
+          const nextMessage = messages[index + 1];
+          const isContinued = nextMessage && nextMessage.sender === message.sender;
+          const row = document.createElement("article");
+          row.className = `message${isMine ? " mine" : ""}${isContinued ? " continued" : ""}`;
+
+          if (!isMine) {
+            const avatar = document.createElement("div");
+            avatar.className = "avatar";
+            setAvatar(avatar, displayName(message.sender));
+            row.append(avatar);
+          }
+
+          const wrap = document.createElement("div");
+          wrap.className = "bubble-wrap";
+
+          if (showNames.checked && !isMine) {
+            const name = document.createElement("div");
+            name.className = "name";
+            name.textContent = displayName(message.sender);
+            wrap.append(name);
+          }
+
+          const bubble = document.createElement("div");
+          bubble.className = "bubble";
+          bubble.textContent = message.body;
+          wrap.append(bubble);
+
+          if (showMeta.checked) {
+            const meta = document.createElement("div");
+            meta.className = "meta";
+            meta.textContent = cleanTime(message.time);
+            wrap.append(meta);
+          }
+
+          row.append(wrap);
+          thread.append(row);
+        });
+      }
+
+      function roundRectPath(ctx, x, y, width, height, radius) {
+        const r = Math.min(radius, width / 2, height / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + width, y, x + width, y + height, r);
+        ctx.arcTo(x + width, y + height, x, y + height, r);
+        ctx.arcTo(x, y + height, x, y, r);
+        ctx.arcTo(x, y, x + width, y, r);
+        ctx.closePath();
+      }
+
+      function fillRoundRect(ctx, x, y, width, height, radius, fill) {
+        roundRectPath(ctx, x, y, width, height, radius);
+        ctx.fillStyle = fill;
+        ctx.fill();
+      }
+
+      function wrapCanvasText(ctx, text, maxWidth) {
+        const lines = [];
+        text.split("\n").forEach((paragraph) => {
+          let line = "";
+          [...paragraph].forEach((char) => {
+            const next = line + char;
+            if (line && ctx.measureText(next).width > maxWidth) {
+              lines.push(line);
+              line = char;
+            } else {
+              line = next;
+            }
+          });
+          lines.push(line || " ");
+        });
+        return lines;
+      }
+
+      function drawCircleAvatar(ctx, x, y, size, text, image, color) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        if (image) {
+          ctx.drawImage(image, x, y, size, size);
+        } else {
+          ctx.fillStyle = color;
+          ctx.fillRect(x, y, size, size);
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "800 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(initials(text), x + size / 2, y + size / 2 + 0.5);
+        }
+
+        ctx.restore();
+      }
+
+      function getCanvasTheme() {
+        const style = getComputedStyle(capture);
+        return {
+          accent: style.getPropertyValue("--accent").trim() || "#e06b75",
+          chatBg: style.getPropertyValue("--chat-bg").trim() || "#fff6ef",
+          incoming: style.getPropertyValue("--incoming").trim() || "#ffffff",
+          incomingInk: style.getPropertyValue("--incoming-ink").trim() || "#24262d",
+          outgoing: style.getPropertyValue("--outgoing").trim() || "#e06b75",
+          outgoingInk: style.getPropertyValue("--outgoing-ink").trim() || "#ffffff",
+          avatar: style.getPropertyValue("--avatar").trim() || "#78a6a3",
+        };
+      }
+
+      function loadProfileForCanvas() {
+        return new Promise((resolve) => {
+          if (!profileImageData) {
+            resolve(null);
+            return;
+          }
+
+          const image = new Image();
+          image.onload = () => resolve(image);
+          image.onerror = () => resolve(null);
+          image.src = profileImageData;
+        });
+      }
+
+      function downloadCanvas(canvas) {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            parseStatus.textContent = "저장 실패";
+            return;
+          }
+
+          const link = document.createElement("a");
+          link.download = `ooc-chat-${Date.now()}.png`;
+          link.href = URL.createObjectURL(blob);
+          link.click();
+          URL.revokeObjectURL(link.href);
+          parseStatus.textContent = "이미지 저장됨";
+        }, "image/png");
+      }
+
+      async function saveImage() {
+        const messages = parseMessages(source.value);
+        if (!messages.length) {
+          parseStatus.textContent = "대화 없음";
+          return;
+        }
+
+        render();
+
+        const selectedTheme = theme.value;
+        const me = getMe(messages);
+        const title = getOtherName(messages, me);
+        const themeColors = getCanvasTheme();
+        const avatarImage = await loadProfileForCanvas();
+        const cardWidth = 560;
+        const outerPad = 18;
+        const width = cardWidth + outerPad * 2;
+        const pad = 16;
+        const headerHeight = selectedTheme === "imessage" ? 132 : 72;
+        const composerHeight = 58;
+        const threadGap = compact.checked ? 7 : 11;
+        const scale = Math.min(window.devicePixelRatio || 2, 3);
+
+        const measure = document.createElement("canvas").getContext("2d");
+        measure.font = "400 16px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+        const layouts = [];
+        let y = headerHeight + 22;
+
+        messages.forEach((message) => {
+          const isMine = message.sender === me;
+          const maxBubble = isMine ? 330 : selectedTheme === "imessage" ? 360 : 350;
+          measure.font = "400 16px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          const lines = wrapCanvasText(measure, message.body, maxBubble - 26);
+          const bubbleHeight = Math.max(38, lines.length * 23 + 20);
+          const bubbleWidth = Math.min(maxBubble, Math.max(54, ...lines.map((line) => measure.measureText(line).width + 26)));
+          const showName = showNames.checked && !isMine && selectedTheme !== "imessage" && selectedTheme !== "instagram";
+          const nameHeight = showName ? 18 : 0;
+          const metaHeight = showMeta.checked ? 17 : 0;
+          const rowHeight = nameHeight + bubbleHeight + metaHeight;
+          layouts.push({ message, isMine, lines, bubbleWidth, bubbleHeight, rowHeight, showName, y });
+          y += rowHeight + threadGap;
+        });
+
+        const cardHeight = Math.ceil(y + composerHeight + 18);
+        const height = cardHeight + outerPad * 2;
+        const canvas = document.createElement("canvas");
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.scale(scale, scale);
+        ctx.translate(outerPad, outerPad);
+
+        ctx.shadowColor = "rgba(50, 43, 36, 0.16)";
+        ctx.shadowBlur = 18;
+        ctx.shadowOffsetY = 8;
+        fillRoundRect(ctx, 0, 0, cardWidth, cardHeight, 34, themeColors.chatBg);
+        ctx.shadowColor = "transparent";
+
+        ctx.save();
+        roundRectPath(ctx, 0, 0, cardWidth, cardHeight, 34);
+        ctx.clip();
+        ctx.fillStyle = "rgba(255,255,255,0.76)";
+        ctx.fillRect(0, 0, cardWidth, headerHeight);
+        ctx.restore();
+
+        ctx.fillStyle = "rgba(80,70,60,0.12)";
+        ctx.fillRect(0, headerHeight - 1, cardWidth, 1);
+
+        if (selectedTheme === "imessage") {
+          drawCircleAvatar(ctx, cardWidth / 2 - 27, 22, 54, title, avatarImage, themeColors.avatar);
+          ctx.fillStyle = "#23242a";
+          ctx.font = "800 15px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(title, cardWidth / 2, 96);
+        } else {
+          drawCircleAvatar(ctx, 20, 17, 38, title, avatarImage, themeColors.avatar);
+          ctx.fillStyle = "#23242a";
+          ctx.font = "800 15px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.textAlign = "left";
+          ctx.fillText(title, 68, 39);
+        }
+
+        layouts.forEach((item) => {
+          const { message, isMine, lines, bubbleWidth, bubbleHeight, showName } = item;
+          const senderName = displayName(message.sender);
+          const avatarSize = selectedTheme === "imessage" ? 0 : 34;
+          let rowY = item.y;
+          const bubbleX = isMine ? cardWidth - pad - bubbleWidth : pad + (avatarSize ? 42 : 0);
+          const bubbleY = rowY + (showName ? 18 : 0);
+
+          if (!isMine && avatarSize) {
+            drawCircleAvatar(ctx, pad, bubbleY + bubbleHeight - avatarSize, avatarSize, senderName, avatarImage, themeColors.avatar);
+          }
+
+          if (showName) {
+            ctx.fillStyle = "#4f5560";
+            ctx.font = "800 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+            ctx.textAlign = "left";
+            ctx.fillText(senderName, bubbleX, rowY + 11);
+          }
+
+          let bubbleFill = isMine ? themeColors.outgoing : themeColors.incoming;
+          if (isMine && selectedTheme === "instagram") {
+            bubbleFill = ctx.createLinearGradient(bubbleX, bubbleY, bubbleX + bubbleWidth, bubbleY + bubbleHeight);
+            bubbleFill.addColorStop(0, "#833ab4");
+            bubbleFill.addColorStop(0.55, "#fd1d1d");
+            bubbleFill.addColorStop(1, "#fcb045");
+          }
+          fillRoundRect(ctx, bubbleX, bubbleY, bubbleWidth, bubbleHeight, 18, bubbleFill);
+
+          ctx.fillStyle = isMine ? themeColors.outgoingInk : themeColors.incomingInk;
+          ctx.font = "400 16px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.textAlign = "left";
+          lines.forEach((line, index) => {
+            ctx.fillText(line, bubbleX + 13, bubbleY + 26 + index * 23);
+          });
+
+          if (showMeta.checked) {
+            ctx.fillStyle = "#737985";
+            ctx.font = "400 10px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+            ctx.textAlign = isMine ? "right" : "left";
+            ctx.fillText(cleanTime(message.time), isMine ? bubbleX + bubbleWidth : bubbleX, bubbleY + bubbleHeight + 14);
+          }
+        });
+
+        const footerHeight = selectedTheme === "kakao" ? 64 : 66;
+        const footerY = cardHeight - footerHeight;
+        const composerY = selectedTheme === "kakao" ? footerY + 14 : footerY + 13;
+        ctx.font = "800 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+        ctx.textAlign = "center";
+
+        if (selectedTheme === "kakao") {
+          ctx.fillStyle = "rgba(255,255,255,0.9)";
+          ctx.fillRect(0, footerY, cardWidth, footerHeight);
+          ctx.fillStyle = "#3a2d20";
+          ctx.font = "900 17px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.fillText("+", 30, composerY + 23);
+          fillRoundRect(ctx, 54, composerY, cardWidth - 118, 36, 12, "#ffffff");
+          ctx.fillStyle = "#9aa0aa";
+          ctx.font = "400 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.textAlign = "left";
+          ctx.fillText("메시지 입력", 70, composerY + 23);
+          ctx.fillStyle = "#3a2d20";
+          ctx.font = "900 17px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("#", cardWidth - 36, composerY + 23);
+        } else if (selectedTheme === "instagram") {
+          fillRoundRect(ctx, 14, composerY, cardWidth - 28, 40, 20, "#ffffff");
+          ctx.strokeStyle = "#eceef2";
+          ctx.lineWidth = 1;
+          roundRectPath(ctx, 14, composerY, cardWidth - 28, 40, 20);
+          ctx.stroke();
+          fillRoundRect(ctx, 26, composerY + 8, 24, 24, 12, "rgba(193,53,132,0.12)");
+          ctx.fillStyle = themeColors.accent;
+          ctx.fillText("⊙", 38, composerY + 25);
+          ctx.fillStyle = "#9aa0aa";
+          ctx.font = "400 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.textAlign = "left";
+          ctx.fillText("메시지", 68, composerY + 25);
+          fillRoundRect(ctx, cardWidth - 50, composerY + 8, 24, 24, 12, "rgba(193,53,132,0.12)");
+          ctx.fillStyle = themeColors.accent;
+          ctx.font = "800 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("♡", cardWidth - 38, composerY + 25);
+        } else {
+          fillRoundRect(ctx, 14, composerY, cardWidth - 28, 40, 20, "rgba(255,255,255,0.82)");
+          fillRoundRect(ctx, 26, composerY + 7, 26, 26, 13, "rgba(22,119,242,0.1)");
+          ctx.fillStyle = themeColors.accent;
+          ctx.font = "800 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.fillText("+", 39, composerY + 25);
+          ctx.fillStyle = "#9aa0aa";
+          ctx.font = "400 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.textAlign = "left";
+          ctx.fillText(selectedTheme === "imessage" ? "iMessage" : "메시지", 66, composerY + 25);
+          fillRoundRect(ctx, cardWidth - 52, composerY + 7, 26, 26, 13, "rgba(22,119,242,0.1)");
+          ctx.fillStyle = themeColors.accent;
+          ctx.font = "800 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(selectedTheme === "imessage" ? "◉" : "↗", cardWidth - 39, composerY + 25);
+        }
+
+        downloadCanvas(canvas);
+      }
+
+      document.querySelector("#clearButton").addEventListener("click", () => {
+        source.value = "";
+        render();
+      });
+
+      document.querySelector("#copyPrompt").addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(promptText);
+          parseStatus.textContent = "지침 복사됨";
+        } catch {
+          const copyArea = document.createElement("textarea");
+          copyArea.value = promptText;
+          copyArea.setAttribute("readonly", "");
+          copyArea.style.position = "fixed";
+          copyArea.style.left = "-9999px";
+          document.body.append(copyArea);
+          copyArea.select();
+          const copied = document.execCommand("copy");
+          copyArea.remove();
+          parseStatus.textContent = copied ? "지침 복사됨" : "복사 실패";
+        }
+      });
+
+      document.querySelector("#saveImage").addEventListener("click", saveImage);
+
+      profileImage.addEventListener("change", () => {
+        const file = profileImage.files && profileImage.files[0];
+
+        if (!file) {
+          profileImageData = "";
+          render();
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          profileImageData = String(reader.result || "");
+          render();
+        };
+        reader.readAsDataURL(file);
+      });
+
+      removeProfile.addEventListener("click", () => {
+        profileImage.value = "";
+        profileImageData = "";
+        render();
+      });
+
+      [bgColor, mineColor, otherColor, avatarColor].forEach((element) => {
+        element.addEventListener("input", () => {
+          theme.value = "custom";
+          render();
+        });
+        element.addEventListener("change", () => {
+          theme.value = "custom";
+          render();
+        });
+      });
+
+      [source, theme, meInput, replaceFromInput, replaceToInput, showMeta, showNames, compact].forEach((element) => {
+        element.addEventListener("input", render);
+        element.addEventListener("change", render);
+      });
+
+      render();
+    </script>
+  </body>
+</html>
